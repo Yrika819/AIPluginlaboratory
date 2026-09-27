@@ -6,6 +6,8 @@ import {
   gzipBytes,
   gunzipBytes,
   hashBytes,
+  inspectGzip,
+  inspectZip,
   joinBytes,
   replaceExtension,
   safeArchivePath,
@@ -19,11 +21,15 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
 describe("file tools", () => {
-  test("ZIP round trips multiple entries", () => {
+  test("ZIP round trips multiple entries and reports declared size", () => {
     const zip = zipEntries([
       { name: "hello.txt", data: encoder.encode("hello") },
       { name: "folder/data.json", data: encoder.encode('{"ok":true}') },
     ]);
+    const info = inspectZip(zip);
+    expect(info.entries).toBe(2);
+    expect(info.uncompressedBytes).toBe(16);
+
     const entries = unzipEntries(zip);
     expect(entries.map((entry) => entry.name)).toEqual(["hello.txt", "folder/data.json"]);
     expect(decoder.decode(entries[0].data)).toBe("hello");
@@ -38,9 +44,19 @@ describe("file tools", () => {
     expect(names).toEqual(["secret.txt", "secret (2).txt"]);
   });
 
-  test("GZIP round trips bytes", () => {
+  test("rejects malformed ZIP metadata before extraction", () => {
+    expect(() => inspectZip(Uint8Array.from([0x50, 0x4b, 0x03, 0x04]))).toThrow();
+  });
+
+  test("GZIP round trips bytes and inspects declared output size", () => {
     const source = encoder.encode("PocketBench ".repeat(100));
-    expect(gunzipBytes(gzipBytes(source))).toEqual(source);
+    const gz = gzipBytes(source);
+    expect(inspectGzip(gz).declaredUncompressedBytes).toBe(source.length);
+    expect(gunzipBytes(gz)).toEqual(source);
+  });
+
+  test("rejects invalid GZIP data", () => {
+    expect(() => inspectGzip(encoder.encode("not gzip"))).toThrow(/Invalid GZIP/);
   });
 
   test("computes standard SHA-256", async () => {
@@ -48,9 +64,14 @@ describe("file tools", () => {
       .toBe("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
   });
 
-  test("Base64 round trips binary data", () => {
+  test("Base64 round trips binary data and accepts unpadded input", () => {
     const source = Uint8Array.from([0, 1, 2, 127, 128, 255]);
     expect(base64ToBytes(bytesToBase64(source))).toEqual(source);
+    expect(decoder.decode(base64ToBytes("aGVsbG8"))).toBe("hello");
+  });
+
+  test("rejects malformed Base64", () => {
+    expect(() => base64ToBytes("abc$")).toThrow(/Invalid Base64/);
   });
 
   test("splits and joins losslessly", () => {
