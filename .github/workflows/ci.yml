@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - "experiment/**"
+      - "feature/**"
   pull_request:
   workflow_dispatch:
 
@@ -27,22 +27,82 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - name: Test
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+      - name: Unit tests
         run: npm test
       - name: Static checks
         run: npm run check
       - name: Production build
         run: npm run build
 
-  release-bundle:
-    name: Production bundle
-    needs: verify
+  browser-e2e:
+    name: Browser E2E
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Build
+        run: npm run build
+      - name: End-to-end tests
+        run: npm run test:e2e
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  runtime-audit:
+    name: Runtime dependency audit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Resolve dependencies
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  lockfile:
+    name: Generate dependency lock
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: npm install --package-lock-only --ignore-scripts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-package-lock
+          path: package-lock.json
+          if-no-files-found: error
+          retention-days: 7
+
+  production-bundle:
+    name: Production bundle
+    needs:
+      - verify
+      - browser-e2e
+      - runtime-audit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: npm install --ignore-scripts
       - run: npm run build
       - uses: actions/upload-artifact@v4
         with:

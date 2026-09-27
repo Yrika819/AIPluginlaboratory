@@ -4,70 +4,266 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101828">
-  <meta name="description" content="PocketBench: a private, local-first toolbox for text and lightweight data work.">
+  <meta name="description" content="PocketBench is a local-first toolbox for files, images, structured data and text.">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
-  <title>PocketBench</title>
+  <title>PocketBench — local utility toolbox</title>
 </head>
 <body>
-  <header class="topbar">
-    <div>
-      <p class="eyebrow">Local-first toolbox</p>
-      <h1>PocketBench</h1>
+  <header class="app-header">
+    <a class="brand" href="#" aria-label="PocketBench home">
+      <span class="brand-mark" aria-hidden="true">PB</span>
+      <span><strong>PocketBench</strong><small>Local utility toolbox</small></span>
+    </a>
+    <div class="header-actions">
+      <span class="local-badge">Private by design</span>
+      <button id="installButton" class="button secondary" hidden>Install app</button>
     </div>
-    <button id="installButton" class="ghost" hidden>Install app</button>
   </header>
-  <main>
-    <section class="intro card">
+
+  <main class="shell">
+    <section class="hero">
       <div>
-        <h2>One scratchpad. Small useful tools.</h2>
-        <p>Everything runs locally in your browser. Nothing you paste here is uploaded.</p>
+        <p class="eyebrow">No upload. No account. No tracking.</p>
+        <h1>Your everyday file bench, right in the browser.</h1>
+        <p class="hero-copy">Convert images, pack archives, inspect files, transform data and clean text. Processing stays on your device.</p>
       </div>
-      <span class="privacy-badge">Offline ready</span>
+      <div class="hero-stats">
+        <div><strong>4</strong><span>workspaces</span></div>
+        <div><strong>20+</strong><span>utilities</span></div>
+        <div><strong>0</strong><span>server uploads</span></div>
+      </div>
     </section>
-    <section class="workspace">
-      <div class="editor card">
-        <div class="section-head">
-          <label for="input">Input</label>
-          <div class="button-row compact">
-            <button id="pasteButton" class="ghost">Paste</button>
-            <button id="clearButton" class="ghost danger">Clear</button>
+
+    <nav class="tabs" aria-label="Tool workspaces">
+      <button class="tab active" data-tab="files" aria-selected="true">Files</button>
+      <button class="tab" data-tab="images" aria-selected="false">Images</button>
+      <button class="tab" data-tab="data" aria-selected="false">Data</button>
+      <button class="tab" data-tab="text" aria-selected="false">Text</button>
+    </nav>
+
+    <section class="workspace active" data-panel="files">
+      <div class="workspace-heading">
+        <div>
+          <p class="eyebrow">File lab</p>
+          <h2>Compress, extract, hash, encode, split and join.</h2>
+        </div>
+        <span class="hint">512 MiB in-memory safety limit per operation</span>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <label id="dropZone" class="drop-zone" for="fileInput">
+            <input id="fileInput" type="file" multiple>
+            <span class="drop-icon" aria-hidden="true">＋</span>
+            <strong>Drop files here</strong>
+            <span>or tap to choose files</span>
+          </label>
+          <div class="section-row">
+            <h3>Selected files</h3>
+            <button id="clearFiles" class="link-button">Clear</button>
           </div>
-        </div>
-        <textarea id="input" spellcheck="false" placeholder="Paste text, JSON, URLs, lists…"></textarea>
-        <div id="stats" class="stats" aria-live="polite"></div>
+          <div id="fileList" class="file-list empty-state">No files selected.</div>
+        </article>
+
+        <article class="card">
+          <h3>Actions</h3>
+          <div class="option-grid">
+            <label>Compression level
+              <select id="compressionLevel">
+                <option value="1">Fast</option>
+                <option value="6" selected>Balanced</option>
+                <option value="9">Maximum</option>
+              </select>
+            </label>
+            <label>Split size (MiB)
+              <input id="splitSize" type="number" min="1" max="256" value="10">
+            </label>
+          </div>
+          <div class="action-grid">
+            <button data-file-action="zip">Make ZIP</button>
+            <button data-file-action="gzip">GZIP first file</button>
+            <button data-file-action="extract">Extract ZIP / GZIP</button>
+            <button data-file-action="hash">SHA hashes</button>
+            <button data-file-action="base64">File → Base64</button>
+            <button data-file-action="split">Split first file</button>
+            <button data-file-action="join">Join selected parts</button>
+          </div>
+          <p class="note">For joining, files are combined in the order shown above. Select parts in the intended order.</p>
+        </article>
       </div>
-      <div class="tools card">
-        <div class="section-head">
-          <h2>Tools</h2>
-          <button id="copyButton" class="ghost">Copy result</button>
+
+      <article class="card results-card">
+        <div class="section-row">
+          <h3>Results</h3>
+          <span id="fileStatus" class="status">Ready</span>
         </div>
-        <div class="tool-grid" role="group" aria-label="Text tools">
-          <button data-action="normalize">Normalize text</button>
-          <button data-action="dedupe">Remove duplicate lines</button>
-          <button data-action="sortAsc">Sort lines A → Z</button>
-          <button data-action="sortDesc">Sort lines Z → A</button>
-          <button data-action="jsonPretty">Pretty JSON</button>
-          <button data-action="jsonMinify">Minify JSON</button>
-          <button data-action="urlEncode">URL encode</button>
-          <button data-action="urlDecode">URL decode</button>
-          <button data-action="base64Encode">Base64 encode</button>
-          <button data-action="base64Decode">Base64 decode</button>
-          <button data-action="uuid">Generate UUID</button>
+        <div id="fileResults" class="results empty-state">Generated files and hashes will appear here.</div>
+      </article>
+    </section>
+
+    <section class="workspace" data-panel="images" hidden>
+      <div class="workspace-heading">
+        <div>
+          <p class="eyebrow">Image lab</p>
+          <h2>Resize and convert without uploading your photos.</h2>
         </div>
-        <div class="section-head result-head">
-          <label for="output">Result</label>
-          <span id="status" class="status" aria-live="polite">Ready</span>
-        </div>
-        <textarea id="output" readonly spellcheck="false" placeholder="Result appears here"></textarea>
+        <span class="hint">Re-encoding also strips common embedded metadata</span>
       </div>
+
+      <div class="grid two">
+        <article class="card">
+          <label class="drop-zone compact-drop" for="imageInput">
+            <input id="imageInput" type="file" accept="image/*">
+            <span class="drop-icon" aria-hidden="true">▧</span>
+            <strong>Choose an image</strong>
+            <span>PNG, JPEG, WebP and browser-supported formats</span>
+          </label>
+          <div id="imagePreviewWrap" class="preview-wrap empty-state">Image preview</div>
+        </article>
+
+        <article class="card">
+          <h3>Convert</h3>
+          <div class="option-grid">
+            <label>Output format
+              <select id="imageFormat">
+                <option value="image/webp">WebP</option>
+                <option value="image/jpeg">JPEG</option>
+                <option value="image/png">PNG</option>
+              </select>
+            </label>
+            <label>Quality
+              <input id="imageQuality" type="range" min="40" max="100" value="88">
+              <span id="qualityValue" class="range-value">88%</span>
+            </label>
+            <label>Max width
+              <input id="imageWidth" type="number" min="0" placeholder="Keep original">
+            </label>
+            <label>Max height
+              <input id="imageHeight" type="number" min="0" placeholder="Keep original">
+            </label>
+            <label>JPEG background
+              <input id="imageBackground" type="color" value="#ffffff">
+            </label>
+          </div>
+          <button id="convertImageButton" class="button wide">Convert image</button>
+          <div id="imageResult" class="results compact-results empty-state">Converted image details will appear here.</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="workspace" data-panel="data" hidden>
+      <div class="workspace-heading">
+        <div>
+          <p class="eyebrow">Data lab</p>
+          <h2>Move cleanly between everyday structured formats.</h2>
+        </div>
+        <span class="hint">CSV · TSV · JSON · YAML · query strings</span>
+      </div>
+
+      <div class="grid two editors">
+        <article class="card">
+          <div class="section-row">
+            <label for="dataInput"><strong>Input</strong></label>
+            <button id="pasteData" class="link-button">Paste</button>
+          </div>
+          <textarea id="dataInput" class="code-area" spellcheck="false" placeholder="Paste CSV, JSON, YAML or a query string…"></textarea>
+        </article>
+        <article class="card">
+          <div class="section-row">
+            <label for="dataOutput"><strong>Output</strong></label>
+            <div class="inline-actions">
+              <button id="copyData" class="link-button">Copy</button>
+              <button id="downloadData" class="link-button">Download</button>
+            </div>
+          </div>
+          <textarea id="dataOutput" class="code-area" spellcheck="false" readonly placeholder="Converted output appears here."></textarea>
+        </article>
+      </div>
+
+      <article class="card">
+        <div class="section-row">
+          <h3>Transforms</h3>
+          <label class="inline-select">Delimiter
+            <select id="delimiter">
+              <option value="auto">Auto detect</option>
+              <option value=",">Comma</option>
+              <option value="tab">Tab</option>
+              <option value=";">Semicolon</option>
+              <option value="|">Pipe</option>
+            </select>
+          </label>
+        </div>
+        <div class="action-grid data-actions">
+          <button data-data-action="csv-json">CSV / TSV → JSON</button>
+          <button data-data-action="json-csv">JSON → CSV</button>
+          <button data-data-action="json-yaml">JSON → YAML</button>
+          <button data-data-action="yaml-json">YAML → JSON</button>
+          <button data-data-action="query-json">Query → JSON</button>
+          <button data-data-action="pretty-json">Pretty JSON</button>
+          <button data-data-action="minify-json">Minify JSON</button>
+        </div>
+        <div class="section-row footer-row"><span id="dataStatus" class="status">Ready</span></div>
+      </article>
+    </section>
+
+    <section class="workspace" data-panel="text" hidden>
+      <div class="workspace-heading">
+        <div>
+          <p class="eyebrow">Text lab</p>
+          <h2>Clean, reshape, encode and count text quickly.</h2>
+        </div>
+        <span id="textStats" class="hint">0 chars · 0 words · 0 lines · 0 bytes</span>
+      </div>
+
+      <div class="grid two editors">
+        <article class="card">
+          <div class="section-row">
+            <label for="textInput"><strong>Input</strong></label>
+            <button id="pasteText" class="link-button">Paste</button>
+          </div>
+          <textarea id="textInput" spellcheck="false" placeholder="Paste text here…"></textarea>
+        </article>
+        <article class="card">
+          <div class="section-row">
+            <label for="textOutput"><strong>Result</strong></label>
+            <button id="copyText" class="link-button">Copy</button>
+          </div>
+          <textarea id="textOutput" spellcheck="false" readonly placeholder="Result appears here."></textarea>
+        </article>
+      </div>
+
+      <article class="card">
+        <div class="action-grid text-actions">
+          <button data-text-action="normalize">Normalize</button>
+          <button data-text-action="trim">Trim lines</button>
+          <button data-text-action="remove-blanks">Remove blank lines</button>
+          <button data-text-action="dedupe">Deduplicate lines</button>
+          <button data-text-action="sort-asc">Sort A → Z</button>
+          <button data-text-action="sort-desc">Sort Z → A</button>
+          <button data-text-action="upper">UPPERCASE</button>
+          <button data-text-action="lower">lowercase</button>
+          <button data-text-action="title">Title Case</button>
+          <button data-text-action="slug">Slugify</button>
+          <button data-text-action="lf">LF endings</button>
+          <button data-text-action="crlf">CRLF endings</button>
+          <button data-text-action="url-encode">URL encode</button>
+          <button data-text-action="url-decode">URL decode</button>
+          <button data-text-action="base64-encode">Base64 encode</button>
+          <button data-text-action="base64-decode">Base64 decode</button>
+          <button data-text-action="uuid">Generate UUID</button>
+        </div>
+        <div class="section-row footer-row"><span id="textStatus" class="status">Ready</span></div>
+      </article>
     </section>
   </main>
-  <footer>
-    <span>PocketBench</span>
-    <span>Runs locally · MIT licensed</span>
+
+  <footer class="app-footer">
+    <span>PocketBench 0.2</span>
+    <span>Runs locally · Offline-ready · MIT licensed</span>
   </footer>
+
   <script type="module" src="./app.js"></script>
 </body>
 </html>
