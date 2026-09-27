@@ -15,4 +15,4 @@ Please open a GitHub issue with enough detail to reproduce the problem, but do n
 
 ## Untrusted archives
 
-PocketBench sanitizes archive paths before presenting extracted entries. Extraction happens in browser memory and does not write archive paths directly to the operating-system filesystem.
+PocketBench sanitizes archive paths before presenting extracted entries. It also inspects declared ZIP/GZIP expansion sizes and rejects archives that exceed the in-memory safety limit before normal extraction. Extraction happens in browser memory and does not write archive paths directly to the operating-system filesystem.
