@@ -37,6 +37,7 @@ import {
   downloadBlob,
   downloadText,
   readFileBytes,
+  readFileText,
 } from "./lib/downloads.mjs";
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -274,6 +275,21 @@ async function handleFileBase64() {
   fileResults.className = "results";
 }
 
+async function handleFileBase64Decode() {
+  const file = selectedFiles[0];
+  if (!file) throw new Error("Select a Base64 text file first.");
+  const decoded = base64ToBytes(await readFileText(file));
+  let name = file.name
+    .replace(/\.base64\.txt$/i, "")
+    .replace(/\.b64$/i, "")
+    .replace(/\.base64$/i, "");
+  if (!name || name === file.name) name = "decoded-file.bin";
+  fileResults.replaceChildren(
+    makeDownloadRow(name, new Blob([decoded]), "Decoded · " + formatBytes(decoded.length)),
+  );
+  fileResults.className = "results";
+}
+
 async function handleSplit() {
   const file = selectedFiles[0];
   if (!file) throw new Error("Select a file first.");
@@ -316,6 +332,7 @@ const fileActions = {
   extract: handleExtract,
   hash: handleHashes,
   base64: handleFileBase64,
+  "base64-decode": handleFileBase64Decode,
   split: handleSplit,
   join: handleJoin,
 };
@@ -395,7 +412,23 @@ $("#convertImageButton").addEventListener("click", async (event) => {
 const dataInput = $("#dataInput");
 const dataOutput = $("#dataOutput");
 const dataStatus = $("#dataStatus");
+const dataFileInput = $("#dataFileInput");
 let dataDownload = { name: "pocketbench-output.txt", type: "text/plain;charset=utf-8" };
+
+dataFileInput.addEventListener("change", async () => {
+  const file = dataFileInput.files?.[0];
+  if (!file) return;
+  try {
+    dataInput.value = await readFileText(file);
+    dataInput.dispatchEvent(new Event("input"));
+    const extension = file.name.split(".").pop()?.toLocaleLowerCase();
+    if (extension === "tsv") $("#delimiter").value = "tab";
+    else if (extension === "csv") $("#delimiter").value = "auto";
+    setStatus(dataStatus, file.name + " loaded");
+  } catch (error) {
+    setStatus(dataStatus, error instanceof Error ? error.message : "Could not read file", true);
+  }
+});
 
 function delimiterValue() {
   const value = $("#delimiter").value;
