@@ -87,6 +87,7 @@
             <button data-file-action="extract">Extract ZIP / GZIP</button>
             <button data-file-action="hash">SHA hashes</button>
             <button data-file-action="base64">File → Base64</button>
+            <button data-file-action="base64-decode">Base64 → file</button>
             <button data-file-action="split">Split first file</button>
             <button data-file-action="join">Join selected parts</button>
           </div>
@@ -166,9 +167,13 @@
         <article class="card">
           <div class="section-row">
             <label for="dataInput"><strong>Input</strong></label>
-            <button id="pasteData" class="link-button">Paste</button>
+            <div class="inline-actions">
+              <label class="link-button file-link" for="dataFileInput">Open file</label>
+              <input id="dataFileInput" class="visually-hidden-file" type="file" accept=".csv,.tsv,.json,.yaml,.yml,.txt,text/*,application/json,application/yaml">
+              <button id="pasteData" class="link-button">Paste</button>
+            </div>
           </div>
-          <textarea id="dataInput" class="code-area" spellcheck="false" placeholder="Paste CSV, JSON, YAML or a query string…"></textarea>
+          <textarea id="dataInput" class="code-area" spellcheck="false" placeholder="Paste or open CSV, TSV, JSON, YAML or a query string…"></textarea>
         </article>
         <article class="card">
           <div class="section-row">
