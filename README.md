@@ -11,7 +11,7 @@ PocketBench is a local-first utility toolbox that runs in a modern browser and c
 - GZIP a single file.
 - Extract ZIP and GZIP archives.
 - Calculate SHA-256, SHA-384, and SHA-512 checksums.
-- Encode files as Base64.
+- Encode files as Base64 and restore Base64 text back to binary files.
 - Split large files into numbered parts.
 - Join numbered parts back together.
 
@@ -22,6 +22,7 @@ PocketBench is a local-first utility toolbox that runs in a modern browser and c
 - Re-encode images, which also removes common embedded metadata.
 
 ### Data
+- Open CSV, TSV, JSON, YAML, and text files directly into the Data workspace.
 - CSV / TSV / semicolon / pipe-delimited data to JSON.
 - JSON to CSV or TSV.
 - JSON to YAML.
