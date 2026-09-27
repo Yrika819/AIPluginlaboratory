@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101828">
+  <meta name="description" content="PocketBench: a private, local-first toolbox for text and lightweight data work.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <title>PocketBench</title>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Local-first toolbox</p>
+      <h1>PocketBench</h1>
+    </div>
+    <button id="installButton" class="ghost" hidden>Install app</button>
+  </header>
+  <main>
+    <section class="intro card">
+      <div>
+        <h2>One scratchpad. Small useful tools.</h2>
+        <p>Everything runs locally in your browser. Nothing you paste here is uploaded.</p>
+      </div>
+      <span class="privacy-badge">Offline ready</span>
+    </section>
+    <section class="workspace">
+      <div class="editor card">
+        <div class="section-head">
+          <label for="input">Input</label>
+          <div class="button-row compact">
+            <button id="pasteButton" class="ghost">Paste</button>
+            <button id="clearButton" class="ghost danger">Clear</button>
+          </div>
+        </div>
+        <textarea id="input" spellcheck="false" placeholder="Paste text, JSON, URLs, lists…"></textarea>
+        <div id="stats" class="stats" aria-live="polite"></div>
+      </div>
+      <div class="tools card">
+        <div class="section-head">
+          <h2>Tools</h2>
+          <button id="copyButton" class="ghost">Copy result</button>
+        </div>
+        <div class="tool-grid" role="group" aria-label="Text tools">
+          <button data-action="normalize">Normalize text</button>
+          <button data-action="dedupe">Remove duplicate lines</button>
+          <button data-action="sortAsc">Sort lines A → Z</button>
+          <button data-action="sortDesc">Sort lines Z → A</button>
+          <button data-action="jsonPretty">Pretty JSON</button>
+          <button data-action="jsonMinify">Minify JSON</button>
+          <button data-action="urlEncode">URL encode</button>
+          <button data-action="urlDecode">URL decode</button>
+          <button data-action="base64Encode">Base64 encode</button>
+          <button data-action="base64Decode">Base64 decode</button>
+          <button data-action="uuid">Generate UUID</button>
+        </div>
+        <div class="section-head result-head">
+          <label for="output">Result</label>
+          <span id="status" class="status" aria-live="polite">Ready</span>
+        </div>
+        <textarea id="output" readonly spellcheck="false" placeholder="Result appears here"></textarea>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <span>PocketBench</span>
+    <span>Runs locally · MIT licensed</span>
+  </footer>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
