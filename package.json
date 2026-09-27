@@ -6,8 +6,8 @@
   "description": "Local-first cross-platform file, data, image and text toolbox",
   "scripts": {
     "dev": "vite --config vite.config.mjs",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "vitest run --config vitest.config.mjs",
+    "test:watch": "vitest --config vitest.config.mjs",
     "test:e2e": "playwright test",
     "check": "node scripts/check.mjs",
     "build": "vite build --config vite.config.mjs && node scripts/postbuild.mjs",
