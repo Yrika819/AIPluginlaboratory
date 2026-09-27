@@ -1,12 +1,13 @@
 {
   "name": "PocketBench",
   "short_name": "PocketBench",
-  "description": "A private, local-first toolbox for text and lightweight data work.",
+  "description": "A private, local-first toolbox for files, images, data and text.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#101828",
+  "background_color": "#0b1020",
   "theme_color": "#101828",
+  "categories": ["utilities", "productivity"],
   "icons": [
     {
       "src": "./icon.svg",

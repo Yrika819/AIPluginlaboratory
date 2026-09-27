@@ -7,34 +7,37 @@ const required = [
   "web/app.js",
   "web/styles.css",
   "web/lib/core.mjs",
-  "web/manifest.webmanifest",
-  "web/sw.js",
-  "web/icon.svg",
+  "web/lib/data-tools.mjs",
+  "web/lib/file-tools.mjs",
+  "web/lib/image-tools.mjs",
+  "web/lib/downloads.mjs",
+  "web/public/manifest.webmanifest",
+  "web/public/icon.svg",
+  "vite.config.mjs",
+  "playwright.config.mjs"
 ];
 
 for (const file of required) {
   await access(resolve(root, file));
 }
 
-const manifest = JSON.parse(
-  await readFile(resolve(root, "web/manifest.webmanifest"), "utf8"),
-);
+const pkg = JSON.parse(await readFile(resolve(root, "package.json"), "utf8"));
+if (pkg.version !== "0.2.0") throw new Error("Unexpected package version.");
+if (pkg.dependencies.fflate !== "0.8.3") throw new Error("fflate must be pinned.");
+if (pkg.dependencies.yaml !== "2.9.1") throw new Error("yaml must be pinned.");
 
-if (manifest.name !== "PocketBench") {
-  throw new Error("Manifest name must be PocketBench");
-}
-if (manifest.display !== "standalone") {
-  throw new Error("PWA manifest must use standalone display mode");
-}
+const manifest = JSON.parse(
+  await readFile(resolve(root, "web/public/manifest.webmanifest"), "utf8"),
+);
+if (manifest.name !== "PocketBench") throw new Error("Manifest name mismatch.");
+if (manifest.display !== "standalone") throw new Error("PWA must be standalone.");
 if (!Array.isArray(manifest.icons) || manifest.icons.length === 0) {
-  throw new Error("PWA manifest must define at least one icon");
+  throw new Error("PWA manifest needs an icon.");
 }
 
 const html = await readFile(resolve(root, "web/index.html"), "utf8");
-for (const reference of ["./styles.css", "./app.js", "./manifest.webmanifest"]) {
-  if (!html.includes(reference)) {
-    throw new Error("index.html is missing required reference: " + reference);
-  }
+for (const token of ["./styles.css", "./app.js", "./manifest.webmanifest"]) {
+  if (!html.includes(token)) throw new Error("index.html missing " + token);
 }
 
 console.log("Static checks passed.");

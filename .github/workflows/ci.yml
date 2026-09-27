@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - "experiment/**"
+      - "feature/**"
   pull_request:
   workflow_dispatch:
 
@@ -23,30 +23,123 @@ jobs:
           - macos-15
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
-      - name: Test
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Unit tests
         run: npm test
       - name: Static checks
         run: npm run check
       - name: Production build
         run: npm run build
 
-  release-bundle:
-    name: Production bundle
-    needs: verify
+  browser-e2e:
+    name: Browser E2E
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Build
+        run: npm run build
+      - name: End-to-end tests
+        run: npm run test:e2e
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  runtime-audit:
+    name: Runtime dependency audit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  production-bundle:
+    name: Production bundle
+    needs:
+      - verify
+      - browser-e2e
+      - runtime-audit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci --ignore-scripts
       - run: npm run build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: pocketbench-production
           path: dist/
           if-no-files-found: error
           retention-days: 30
+
+  release:
+    name: GitHub Release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - production-bundle
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          VERSION="$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Package release
+        shell: bash
+        run: |
+          ARCHIVE="pocketbench-web-v${{ steps.version.outputs.version }}.zip"
+          (cd dist && zip -qr "../$ARCHIVE" .)
+          sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="v$VERSION"
+          ARCHIVE="pocketbench-web-v$VERSION.zip"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ARCHIVE" "$ARCHIVE.sha256" --clobber
+          else
+            gh release create "$TAG" "$ARCHIVE" "$ARCHIVE.sha256" \
+              --target "$GITHUB_SHA" \
+              --title "PocketBench $TAG" \
+              --generate-notes
+          fi
