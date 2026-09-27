@@ -33,6 +33,31 @@ test("data tools convert CSV to JSON and JSON to YAML", async ({ page }) => {
   await expect(page.locator("#dataOutput")).toHaveValue(/name: PocketBench/);
 });
 
+test("loads a CSV file directly into the data workspace", async ({ page }) => {
+  await page.goto("/#data");
+  await page.locator("#dataFileInput").setInputFiles({
+    name: "people.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from("name,age\nAlice,18"),
+  });
+  await expect(page.locator("#dataInput")).toHaveValue("name,age\nAlice,18");
+  await expect(page.locator("#dataStatus")).toContainText("people.csv loaded");
+  await page.getByRole("button", { name: "CSV / TSV → JSON" }).click();
+  await expect(page.locator("#dataOutput")).toHaveValue(/Alice/);
+});
+
+test("restores a file from Base64 text", async ({ page }) => {
+  await page.goto("/#files");
+  await page.locator("#fileInput").setInputFiles({
+    name: "hello.txt.base64.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("aGVsbG8="),
+  });
+  await page.getByRole("button", { name: "Base64 → file" }).click();
+  await expect(page.locator("#fileResults")).toContainText("hello.txt");
+  await expect(page.locator("#fileResults").getByRole("button", { name: "Download" })).toBeVisible();
+});
+
 test("creates a ZIP locally from uploaded files", async ({ page }) => {
   await page.goto("/#files");
   await page.locator("#fileInput").setInputFiles([
