@@ -9,7 +9,7 @@ test("loads the toolbox without external network calls", async ({ page }) => {
 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /everyday file bench/i })).toBeVisible();
-  await expect(page.getByText("Private by design")).toBeVisible();
+  await expect(page.getByText("No upload. No account. No tracking.")).toBeVisible();
   expect(external).toEqual([]);
 });
 
@@ -26,11 +26,11 @@ test("data tools convert CSV to JSON and JSON to YAML", async ({ page }) => {
   await page.goto("/#data");
   await page.locator("#dataInput").fill('name,note\nAlice,"hello, world"');
   await page.getByRole("button", { name: "CSV / TSV → JSON" }).click();
-  await expect(page.locator("#dataOutput")).toContainText("Alice");
+  await expect(page.locator("#dataOutput")).toHaveValue(/Alice/);
 
   await page.locator("#dataInput").fill('{"name":"PocketBench","ok":true}');
   await page.getByRole("button", { name: "JSON → YAML" }).click();
-  await expect(page.locator("#dataOutput")).toContainText("name: PocketBench");
+  await expect(page.locator("#dataOutput")).toHaveValue(/name: PocketBench/);
 });
 
 test("creates a ZIP locally from uploaded files", async ({ page }) => {
@@ -57,19 +57,21 @@ test("hashes an uploaded file", async ({ page }) => {
   );
 });
 
-test("converts a PNG image and exposes a download", async ({ page }) => {
+test("converts an image and exposes a download", async ({ page }) => {
   await page.goto("/#images");
-  const png = Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z7YQAAAAASUVORK5CYII=",
-    "base64",
+  const svg = Buffer.from(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="6"><rect width="8" height="6" fill="#526ee8"/></svg>',
+    "utf8",
   );
   await page.locator("#imageInput").setInputFiles({
-    name: "pixel.png",
-    mimeType: "image/png",
-    buffer: png,
+    name: "sample.svg",
+    mimeType: "image/svg+xml",
+    buffer: svg,
   });
+  await page.locator("#imageFormat").selectOption("image/png");
   await page.getByRole("button", { name: "Convert image" }).click();
   await expect(page.locator("#imageResult").getByRole("button", { name: "Download" })).toBeVisible();
+  await expect(page.locator("#imageResult")).toContainText("8×6");
 });
 
 test("works offline after the application shell is cached", async ({ page, context, browserName }) => {
