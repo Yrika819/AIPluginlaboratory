@@ -27,7 +27,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-          cache: npm
       - name: Test
         run: npm test
       - name: Static checks
@@ -44,7 +43,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-          cache: npm
       - run: npm run build
       - uses: actions/upload-artifact@v4
         with:
