@@ -1,8 +1,9 @@
-import { readdir, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { relative, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const dist = resolve(root, "dist");
+const pkg = JSON.parse(await readFile(resolve(root, "package.json"), "utf8"));
 
 async function walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -15,16 +16,40 @@ async function walk(dir) {
   return files;
 }
 
+async function copyOrtRuntime() {
+  const source = resolve(root, "node_modules/onnxruntime-web/dist");
+  const target = resolve(dist, "ort");
+  await mkdir(target, { recursive: true });
+  const names = await readdir(source);
+  const selected = names.filter((name) =>
+    /^ort-wasm.*\.(wasm|mjs)$/.test(name),
+  );
+  if (selected.length === 0) {
+    throw new Error("No ONNX Runtime WebAssembly assets were found.");
+  }
+  await Promise.all(selected.map((name) =>
+    copyFile(resolve(source, name), resolve(target, name)),
+  ));
+  return selected;
+}
+
+const ortFiles = await copyOrtRuntime();
 const allFiles = await walk(dist);
 const assets = allFiles
-  .filter((path) => !path.endsWith("/sw.js") && !path.endsWith("\\sw.js"))
   .map((path) => "./" + relative(dist, path).split("\\").join("/"))
+  .filter((path) =>
+    path !== "./sw.js" &&
+    !path.startsWith("./models/") &&
+    !path.startsWith("./ort/") &&
+    !path.endsWith(".map"),
+  )
   .sort();
 
 if (!assets.includes("./index.html")) assets.unshift("./index.html");
 if (!assets.includes("./")) assets.unshift("./");
 
-const serviceWorker = `const CACHE_NAME = "pocketbench-v2";
+const cacheName = `pocketbench-v${pkg.version}`;
+const serviceWorker = `const CACHE_NAME = ${JSON.stringify(cacheName)};
 const APP_SHELL = ${JSON.stringify(assets, null, 2)};
 
 self.addEventListener("install", (event) => {
@@ -62,10 +87,14 @@ await writeFile(
   resolve(dist, "build-info.json"),
   JSON.stringify({
     name: "PocketBench",
-    version: "0.2.0",
+    version: pkg.version,
     generatedBy: "vite + postbuild",
     precachedFiles: assets.length,
+    lazyAiRuntimeFiles: ortFiles.length,
+    aiModelBundled: allFiles.some((path) => path.endsWith("realesr-general-x4v3.onnx")),
   }, null, 2) + "\n",
 );
 
-console.log(`Production build ready with ${assets.length} precached files.`);
+console.log(
+  `Production build ready: ${assets.length} app-shell files, ${ortFiles.length} lazy ONNX runtime assets.`,
+);
