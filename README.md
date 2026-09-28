@@ -18,6 +18,11 @@ PocketBench is a local-first utility toolbox that runs in a modern browser and c
 ### Images
 - Convert browser-supported images to PNG, JPEG, or WebP.
 - Resize while preserving aspect ratio.
+- Standard high-quality upscale at 1.5×, 2×, 3×, or 4×.
+- **AI General x2 (beta)** using a locally executed Real-ESRGAN model.
+- AI prefers WebGPU on supported Chromium browsers and falls back to WebAssembly.
+- AI inference uses overlap-aware tiles and a conservative device memory budget.
+- The ~4.9 MB ONNX model is generated from the official Real-ESRGAN release weight in CI, numerically verified, SHA-256 pinned, and only fetched when AI upscale is first used.
 - Control JPEG/WebP quality.
 - Re-encode images, which also removes common embedded metadata.
 
@@ -54,6 +59,9 @@ To reduce accidental browser crashes, in-memory file operations are limited to *
 
 - Archive and hash operations currently require the selected file to fit in memory.
 - Image conversion depends on formats supported by the browser.
+- AI upscale is currently beta and fixed to 2× output.
+- WebGPU AI acceleration currently targets supported Chromium browsers; other browsers use WASM when practical.
+- AI upscale rejects images whose estimated output/memory footprint exceeds the configured safety budget.
 - Animated images are flattened when re-encoded through Canvas.
 - PNG ignores the quality slider because PNG encoding is lossless in browser Canvas.
 - A PWA cannot replace native OS file-manager integration; downloads are still mediated by the browser.
@@ -97,13 +105,18 @@ GitHub Actions verifies:
 - Browser end-to-end tests on Chromium, Firefox, WebKit, and a Pixel-class mobile Chromium profile.
 - Offline PWA startup smoke test.
 - Runtime dependency audit.
-- Production artifact generation.
+- Verified official Real-ESRGAN → ONNX export and numerical parity check.
+- Real ONNX Runtime Web inference in Chromium using the production browser bundle.
+- Standard upscale on the normal cross-browser E2E matrix.
+- Production artifact generation including the verified AI model.
 
 ## Third-party software
 
 Runtime dependencies are intentionally limited to:
 - [fflate](https://github.com/101arrowz/fflate) — MIT — ZIP/GZIP.
 - [yaml](https://github.com/eemeli/yaml) — ISC — YAML parsing/serialization.
+- [ONNX Runtime Web](https://onnxruntime.ai/) — MIT — local WebGPU/WASM inference.
+- [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) — BSD-3-Clause — AI super-resolution architecture and official model weights.
 
 See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
