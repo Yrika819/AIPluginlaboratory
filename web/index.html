@@ -191,9 +191,13 @@
         </div>
 
         <div id="aiUpscaleInfo" class="ai-info" hidden>
-          <strong>Real-ESRGAN General</strong>
-          <span>~4.9 MB model · WebGPU preferred · WASM fallback · verified SHA-256</span>
+          <div class="ai-info-head">
+            <strong>Real-ESRGAN General</strong>
+            <button id="clearAiCacheButton" class="link-button" type="button">Clear AI cache</button>
+          </div>
+          <span>~4.9 MB model · WebGPU preferred · WASM worker fallback · verified SHA-256</span>
           <span>AI mode currently outputs 2× and uses tiled inference with a device memory budget.</span>
+          <span id="aiCacheStatus" class="status">Downloaded AI files are cached separately for offline reuse.</span>
         </div>
 
         <div class="upscale-controls">
