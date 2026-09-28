@@ -40,6 +40,8 @@ jobs:
         run: npm run check
       - name: Production build
         run: npm run build
+      - name: Verify production build
+        run: npm run verify:build
 
   browser-e2e:
     name: Browser E2E
@@ -56,6 +58,8 @@ jobs:
         run: npx playwright install --with-deps chromium firefox webkit
       - name: Build
         run: npm run build
+      - name: Verify browser build
+        run: npm run verify:build
       - name: End-to-end tests
         run: npm run test:e2e
       - name: Upload Playwright report on failure
@@ -131,6 +135,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Build with AI model
         run: npm run build
+      - name: Verify AI browser build
+        run: npm run verify:build:ai
       - name: Real ONNX browser inference tests
         run: npx playwright test --config playwright.ai.config.mjs
       - name: Upload AI Playwright report on failure
@@ -192,6 +198,8 @@ jobs:
           name: pocketbench-ai-model
           path: web/public/models
       - run: npm run build
+      - name: Verify final production bundle
+        run: npm run verify:build:ai
       - uses: actions/upload-artifact@v7
         with:
           name: pocketbench-production
