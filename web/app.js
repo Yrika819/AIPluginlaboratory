@@ -34,7 +34,7 @@ import {
 } from "./lib/file-tools.mjs";
 import { convertImage } from "./lib/image-tools.mjs";
 import { standardUpscale } from "./lib/upscale/standard.mjs";
-import { aiUpscale } from "./lib/upscale/ai-engine.mjs";
+import { aiUpscale, clearAiCache } from "./lib/upscale/ai-engine.mjs";
 import { backendLabel, detectUpscaleCapabilities } from "./lib/upscale/capabilities.mjs";
 import {
   downloadBlob,
@@ -444,18 +444,51 @@ function showUpscaleResult(result, detail) {
   upscalePreviewUrl = URL.createObjectURL(result.blob);
 
   const download = makeDownloadRow(result.name, result.blob, detail);
-  const preview = document.createElement("div");
-  preview.className = "upscale-preview";
-  const image = document.createElement("img");
-  image.src = upscalePreviewUrl;
-  image.alt = "Upscaled image preview";
-  const meta = document.createElement("span");
-  meta.textContent = result.width + "×" + result.height + " · " + formatBytes(result.blob.size);
-  preview.append(image, meta);
+  const comparison = document.createElement("div");
+  comparison.className = "upscale-comparison";
 
-  upscaleResult.replaceChildren(download, preview);
+  const makeFigure = (label, src, metaText) => {
+    const figure = document.createElement("figure");
+    const badge = document.createElement("figcaption");
+    badge.textContent = label;
+    const image = document.createElement("img");
+    image.src = src;
+    image.alt = label + " image preview";
+    const meta = document.createElement("span");
+    meta.textContent = metaText;
+    figure.append(badge, image, meta);
+    return figure;
+  };
+
+  const sourceFile = imageInput.files?.[0];
+  if (previewUrl && sourceFile) {
+    comparison.append(
+      makeFigure("Before", previewUrl, sourceFile.name + " · " + formatBytes(sourceFile.size)),
+    );
+  }
+  comparison.append(
+    makeFigure(
+      "After",
+      upscalePreviewUrl,
+      result.width + "×" + result.height + " · " + formatBytes(result.blob.size),
+    ),
+  );
+
+  upscaleResult.replaceChildren(download, comparison);
   upscaleResult.className = "results upscale-result";
 }
+
+$("#clearAiCacheButton").addEventListener("click", async () => {
+  const status = $("#aiCacheStatus");
+  try {
+    const result = await clearAiCache();
+    status.textContent = result.deletedCaches
+      ? "AI cache cleared. The model/runtime will download again on next use."
+      : "No downloaded AI cache was present.";
+  } catch (error) {
+    status.textContent = error instanceof Error ? error.message : "Could not clear AI cache.";
+  }
+});
 
 upscaleMode.addEventListener("change", refreshUpscaleMode);
 upscaleQuality.addEventListener("input", () => {
