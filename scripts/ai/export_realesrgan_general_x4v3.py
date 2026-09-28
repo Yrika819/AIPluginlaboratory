@@ -26,6 +26,8 @@ MODEL_URL = (
     "v0.2.5.0/realesr-general-x4v3.pth"
 )
 EXPECTED_BYTES = 4_885_111
+EXPECTED_SOURCE_SHA256 = "8dc7edb9ac80ccdc30c3a5dca6616509367f05fbc184ad95b731f05bece96292"
+EXPECTED_ONNX_SHA256 = "d239f0d59ce61e9746143d1296c3441585756e4e9a5c10e0c2f371cda5f69a4d"
 
 
 class SRVGGNetCompact(nn.Module):
@@ -147,6 +149,8 @@ def main() -> None:
 
     if weight_bytes != EXPECTED_BYTES:
         raise AssertionError(f"Unexpected official weight size: {weight_bytes} != {EXPECTED_BYTES}")
+    if weight_sha != EXPECTED_SOURCE_SHA256:
+        raise AssertionError(f"Official weight SHA-256 mismatch: {weight_sha}")
 
     model = SRVGGNetCompact(num_conv=32, upscale=4)
     state = load_weights(args.weights)
@@ -158,6 +162,8 @@ def main() -> None:
     export_model(model, args.output)
     verification = verify(model, args.output)
     model_sha = sha256(args.output)
+    if model_sha != EXPECTED_ONNX_SHA256:
+        raise AssertionError(f"Exported ONNX SHA-256 mismatch: {model_sha}")
 
     metadata = {
         "id": "realesr-general-x4v3",
