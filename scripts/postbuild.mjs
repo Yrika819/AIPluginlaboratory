@@ -41,6 +41,8 @@ const assets = allFiles
     path !== "./sw.js" &&
     !path.startsWith("./models/") &&
     !path.startsWith("./ort/") &&
+    !path.includes("ort-wasm") &&
+    !path.includes("ort.all.bundle") &&
     !path.endsWith(".map"),
   )
   .sort();
