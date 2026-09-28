@@ -108,7 +108,7 @@
       <div class="workspace-heading">
         <div>
           <p class="eyebrow">Image lab</p>
-          <h2>Resize and convert without uploading your photos.</h2>
+          <h2>Convert, resize and upscale without uploading your photos.</h2>
         </div>
         <span class="hint">Re-encoding also strips common embedded metadata</span>
       </div>
@@ -152,6 +152,63 @@
           <div id="imageResult" class="results compact-results empty-state">Converted image details will appear here.</div>
         </article>
       </div>
+
+      <article class="card upscale-card">
+        <div class="section-row upscale-heading">
+          <div>
+            <p class="eyebrow">Upscale</p>
+            <h3>Make small images larger — locally.</h3>
+          </div>
+          <span id="upscaleCapability" class="status">Checking device…</span>
+        </div>
+
+        <div class="option-grid upscale-options">
+          <label>Mode
+            <select id="upscaleMode">
+              <option value="standard">Standard — fast & compatible</option>
+              <option value="ai">AI General x2 — Beta</option>
+            </select>
+          </label>
+          <label>Scale
+            <select id="upscaleScale">
+              <option value="1.5">1.5×</option>
+              <option value="2" selected>2×</option>
+              <option value="3">3×</option>
+              <option value="4">4×</option>
+            </select>
+          </label>
+          <label>Output format
+            <select id="upscaleFormat">
+              <option value="image/png">PNG</option>
+              <option value="image/webp">WebP</option>
+              <option value="image/jpeg">JPEG</option>
+            </select>
+          </label>
+          <label>Quality
+            <input id="upscaleQuality" type="range" min="50" max="100" value="92">
+            <span id="upscaleQualityValue" class="range-value">92%</span>
+          </label>
+        </div>
+
+        <div id="aiUpscaleInfo" class="ai-info" hidden>
+          <strong>Real-ESRGAN General</strong>
+          <span>~4.9 MB model · WebGPU preferred · WASM fallback · verified SHA-256</span>
+          <span>AI mode currently outputs 2× and uses tiled inference with a device memory budget.</span>
+        </div>
+
+        <div class="upscale-controls">
+          <button id="upscaleButton" class="button">Upscale image</button>
+          <button id="cancelUpscaleButton" class="button secondary" hidden>Cancel</button>
+          <div class="upscale-progress-wrap">
+            <progress id="upscaleProgress" max="1" value="0"></progress>
+            <span id="upscaleStatus" class="status">Ready</span>
+          </div>
+        </div>
+
+        <div id="upscaleResult" class="results upscale-result empty-state">
+          Upscaled image details and preview will appear here.
+        </div>
+      </article>
     </section>
 
     <section class="workspace" data-panel="data" hidden>
@@ -265,7 +322,7 @@
   </main>
 
   <footer class="app-footer">
-    <span>PocketBench 0.2</span>
+    <span>PocketBench 0.3 alpha</span>
     <span>Runs locally · Offline-ready · MIT licensed</span>
   </footer>
 
