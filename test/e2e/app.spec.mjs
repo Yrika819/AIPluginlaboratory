@@ -99,6 +99,26 @@ test("converts an image and exposes a download", async ({ page }) => {
   await expect(page.locator("#imageResult")).toContainText("8×6");
 });
 
+test("standard upscale enlarges an image locally", async ({ page }) => {
+  await page.goto("/#images");
+  const svg = Buffer.from(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="6"><rect width="8" height="6" fill="#526ee8"/></svg>',
+    "utf8",
+  );
+  await page.locator("#imageInput").setInputFiles({
+    name: "small.svg",
+    mimeType: "image/svg+xml",
+    buffer: svg,
+  });
+  await page.locator("#upscaleMode").selectOption("standard");
+  await page.locator("#upscaleScale").selectOption("2");
+  await page.locator("#upscaleFormat").selectOption("image/png");
+  await page.getByRole("button", { name: "Upscale image" }).click();
+  await expect(page.locator("#upscaleResult")).toContainText("16×12");
+  await expect(page.locator("#upscaleStatus")).toHaveText("Standard upscale complete");
+  await expect(page.locator("#upscaleResult").getByRole("button", { name: "Download" })).toBeVisible();
+});
+
 test("works offline after the application shell is cached", async ({ page, context, browserName }) => {
   test.skip(browserName !== "chromium", "Offline service worker smoke test runs once on Chromium.");
   await page.goto("/");
