@@ -11,6 +11,10 @@ const required = [
   "web/lib/file-tools.mjs",
   "web/lib/image-tools.mjs",
   "web/lib/downloads.mjs",
+  "web/lib/upscale/standard.mjs",
+  "web/lib/upscale/tiling.mjs",
+  "web/lib/upscale/memory-budget.mjs",
+  "web/lib/upscale/capabilities.mjs",
   "web/public/manifest.webmanifest",
   "web/public/icon.svg",
   "vite.config.mjs",
@@ -22,9 +26,10 @@ for (const file of required) {
 }
 
 const pkg = JSON.parse(await readFile(resolve(root, "package.json"), "utf8"));
-if (pkg.version !== "0.2.0") throw new Error("Unexpected package version.");
+if (pkg.version !== "0.3.0-alpha.1") throw new Error("Unexpected package version.");
 if (pkg.dependencies.fflate !== "0.8.3") throw new Error("fflate must be pinned.");
 if (pkg.dependencies.yaml !== "2.9.1") throw new Error("yaml must be pinned.");
+if (pkg.dependencies["onnxruntime-web"] !== "1.30.0") throw new Error("onnxruntime-web must be pinned.");
 
 const manifest = JSON.parse(
   await readFile(resolve(root, "web/public/manifest.webmanifest"), "utf8"),
