@@ -51,8 +51,20 @@ if (!assets.includes("./index.html")) assets.unshift("./index.html");
 if (!assets.includes("./")) assets.unshift("./");
 
 const cacheName = `pocketbench-v${pkg.version}`;
+const aiCacheName = "pocketbench-ai-v1";
 const serviceWorker = `const CACHE_NAME = ${JSON.stringify(cacheName)};
+const AI_CACHE_NAME = ${JSON.stringify(aiCacheName)};
 const APP_SHELL = ${JSON.stringify(assets, null, 2)};
+
+function isAiAsset(requestUrl) {
+  const url = new URL(requestUrl);
+  return (
+    url.pathname.includes("/models/") ||
+    url.pathname.includes("/ort/") ||
+    url.pathname.includes("ort-wasm") ||
+    url.pathname.includes("ort.all.bundle")
+  );
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
@@ -62,7 +74,11 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
+      Promise.all(
+        keys
+          .filter((key) => key.startsWith("pocketbench-v") && key !== CACHE_NAME)
+          .map((key) => caches.delete(key)),
+      ),
     ),
   );
   self.clients.claim();
@@ -70,15 +86,30 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
+
+  if (isAiAsset(event.request.url)) {
+    event.respondWith(
+      caches.open(AI_CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(event.request);
+        if (cached) return cached;
+
+        const response = await fetch(event.request, { cache: "no-store" });
         if (!response || response.status !== 200 || response.type === "opaque") return response;
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        await cache.put(event.request, response.clone());
         return response;
-      });
+      }),
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.open(CACHE_NAME).then(async (cache) => {
+      const cached = await cache.match(event.request);
+      if (cached) return cached;
+      const response = await fetch(event.request);
+      if (!response || response.status !== 200 || response.type === "opaque") return response;
+      await cache.put(event.request, response.clone());
+      return response;
     }),
   );
 });
