@@ -116,6 +116,8 @@ test("standard upscale enlarges an image locally", async ({ page }) => {
   await page.getByRole("button", { name: "Upscale image" }).click();
   await expect(page.locator("#upscaleResult")).toContainText("16×12");
   await expect(page.locator("#upscaleStatus")).toHaveText("Standard upscale complete");
+  await expect(page.locator("#upscaleResult").getByText("Before", { exact: true })).toBeVisible();
+  await expect(page.locator("#upscaleResult").getByText("After", { exact: true })).toBeVisible();
   await expect(page.locator("#upscaleResult").getByRole("button", { name: "Download" })).toBeVisible();
 });
 
