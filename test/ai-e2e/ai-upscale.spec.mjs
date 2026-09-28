@@ -51,6 +51,7 @@ test("AI model and ONNX runtime are served from the same origin", async ({ page 
 
   const nonLocal = requests.filter((value) => {
     const url = new URL(value);
+    if (url.protocol === "blob:") return false;
     return !["127.0.0.1", "localhost"].includes(url.hostname);
   });
   expect(nonLocal).toEqual([]);
