@@ -16,3 +16,9 @@ Please open a GitHub issue with enough detail to reproduce the problem, but do n
 ## Untrusted archives
 
 PocketBench sanitizes archive paths before presenting extracted entries. It also inspects declared ZIP/GZIP expansion sizes and rejects archives that exceed the in-memory safety limit before normal extraction. Extraction happens in browser memory and does not write archive paths directly to the operating-system filesystem.
+
+## AI model integrity
+
+PocketBench does not trust a downloaded model solely by URL. The official Real-ESRGAN source weight is pinned by byte size and SHA-256 before export. The deterministic ONNX output is also pinned by SHA-256. Browser inference downloads the same-origin ONNX asset, checks its byte length and SHA-256 with Web Crypto, and refuses to create an inference session if verification fails.
+
+The AI model and ONNX runtime files are lazy-loaded. They are not required to use the rest of PocketBench and are cached locally only after AI functionality is requested.
