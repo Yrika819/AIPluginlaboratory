@@ -77,6 +77,34 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
+  lockfile:
+    name: Refresh npm dependency lock
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feature/ai-upscale-v0.3'
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Refresh package-lock.json
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Commit lockfile if changed
+        shell: bash
+        run: |
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "package-lock.json already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "build: refresh npm lock for AI upscale"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
   production-bundle:
     name: Production bundle
     needs:
