@@ -4,7 +4,7 @@ import { createTilePlan, chooseTileSize } from "../../web/lib/upscale/tiling.mjs
 import { estimateAiMemory, validateAiBudget } from "../../web/lib/upscale/memory-budget.mjs";
 import { backendLabel, detectUpscaleCapabilities } from "../../web/lib/upscale/capabilities.mjs";
 import { GENERAL_X4V3, resolveModelUrl } from "../../web/lib/upscale/model-registry.mjs";
-import { fetchVerifiedModel, sha256Hex } from "../../web/lib/upscale/ai-engine.mjs";
+import { clearAiCache, fetchVerifiedModel, sha256Hex } from "../../web/lib/upscale/ai-engine.mjs";
 
 describe("standard upscale planning", () => {
   test("calculates scaled dimensions", () => {
@@ -138,6 +138,29 @@ describe("verified model registry", () => {
       fetchImpl: async () => new Response(bytes, { status: 200 }),
     });
     expect(fetched.digest).toBe(hash);
+  });
+
+
+  test("clears only dedicated PocketBench AI caches", async () => {
+    const original = globalThis.caches;
+    const deleted = [];
+    Object.defineProperty(globalThis, "caches", {
+      configurable: true,
+      value: {
+        keys: async () => ["pocketbench-v0.3.0-alpha.1", "pocketbench-ai-v1", "other-cache"],
+        delete: async (name) => {
+          deleted.push(name);
+          return true;
+        },
+      },
+    });
+    try {
+      await expect(clearAiCache()).resolves.toEqual({ deletedCaches: 1 });
+      expect(deleted).toEqual(["pocketbench-ai-v1"]);
+    } finally {
+      if (original === undefined) delete globalThis.caches;
+      else Object.defineProperty(globalThis, "caches", { configurable: true, value: original });
+    }
   });
 
   test("rejects modified model bytes", async () => {
