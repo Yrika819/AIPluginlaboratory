@@ -33,6 +33,9 @@ import {
   zipEntries,
 } from "./lib/file-tools.mjs";
 import { convertImage } from "./lib/image-tools.mjs";
+import { standardUpscale } from "./lib/upscale/standard.mjs";
+import { aiUpscale } from "./lib/upscale/ai-engine.mjs";
+import { backendLabel, detectUpscaleCapabilities } from "./lib/upscale/capabilities.mjs";
 import {
   downloadBlob,
   downloadText,
@@ -408,6 +411,129 @@ $("#convertImageButton").addEventListener("click", async (event) => {
     button.disabled = false;
   }
 });
+
+const upscaleMode = $("#upscaleMode");
+const upscaleScale = $("#upscaleScale");
+const upscaleFormat = $("#upscaleFormat");
+const upscaleQuality = $("#upscaleQuality");
+const upscaleQualityValue = $("#upscaleQualityValue");
+const upscaleButton = $("#upscaleButton");
+const cancelUpscaleButton = $("#cancelUpscaleButton");
+const upscaleProgress = $("#upscaleProgress");
+const upscaleStatus = $("#upscaleStatus");
+const upscaleResult = $("#upscaleResult");
+const upscaleCapability = $("#upscaleCapability");
+const aiUpscaleInfo = $("#aiUpscaleInfo");
+
+let upscaleAbortController = null;
+let upscalePreviewUrl = null;
+
+function refreshUpscaleMode() {
+  const capabilities = detectUpscaleCapabilities();
+  upscaleCapability.textContent =
+    "AI: " + backendLabel(capabilities.preferredBackend) +
+    (capabilities.mobile ? " · mobile profile" : "");
+  const ai = upscaleMode.value === "ai";
+  aiUpscaleInfo.hidden = !ai;
+  upscaleScale.disabled = ai;
+  if (ai) upscaleScale.value = "2";
+}
+
+function showUpscaleResult(result, detail) {
+  if (upscalePreviewUrl) URL.revokeObjectURL(upscalePreviewUrl);
+  upscalePreviewUrl = URL.createObjectURL(result.blob);
+
+  const download = makeDownloadRow(result.name, result.blob, detail);
+  const preview = document.createElement("div");
+  preview.className = "upscale-preview";
+  const image = document.createElement("img");
+  image.src = upscalePreviewUrl;
+  image.alt = "Upscaled image preview";
+  const meta = document.createElement("span");
+  meta.textContent = result.width + "×" + result.height + " · " + formatBytes(result.blob.size);
+  preview.append(image, meta);
+
+  upscaleResult.replaceChildren(download, preview);
+  upscaleResult.className = "results upscale-result";
+}
+
+upscaleMode.addEventListener("change", refreshUpscaleMode);
+upscaleQuality.addEventListener("input", () => {
+  upscaleQualityValue.textContent = upscaleQuality.value + "%";
+});
+cancelUpscaleButton.addEventListener("click", () => {
+  upscaleAbortController?.abort();
+});
+
+upscaleButton.addEventListener("click", async () => {
+  const file = imageInput.files?.[0];
+  if (!file) {
+    setStatus(upscaleStatus, "Choose an image first.", true);
+    return;
+  }
+
+  const mode = upscaleMode.value;
+  const quality = Number(upscaleQuality.value) / 100;
+  const type = upscaleFormat.value;
+  upscaleButton.disabled = true;
+  upscaleProgress.value = 0;
+  setStatus(upscaleStatus, mode === "ai" ? "Preparing local AI…" : "Upscaling…");
+
+  const started = performance.now();
+  try {
+    let result;
+    if (mode === "ai") {
+      upscaleAbortController = new AbortController();
+      cancelUpscaleButton.hidden = false;
+      result = await aiUpscale(file, {
+        outputScale: 2,
+        type,
+        quality,
+        signal: upscaleAbortController.signal,
+        onProgress: (value) => {
+          upscaleProgress.value = value;
+        },
+        onStatus: (message) => setStatus(upscaleStatus, message),
+      });
+      const seconds = result.elapsedMs / 1000;
+      showUpscaleResult(
+        result,
+        result.backend.toUpperCase() + " · " +
+          result.tileCount + " tiles · " +
+          result.tileSize + "px core · " +
+          seconds.toFixed(1) + "s",
+      );
+      setStatus(upscaleStatus, "AI upscale complete");
+    } else {
+      result = await standardUpscale(file, {
+        scale: Number(upscaleScale.value),
+        type,
+        quality,
+        background: $("#imageBackground").value,
+      });
+      upscaleProgress.value = 1;
+      const elapsed = (performance.now() - started) / 1000;
+      showUpscaleResult(result, "Standard upscale · " + elapsed.toFixed(2) + "s");
+      setStatus(upscaleStatus, "Standard upscale complete");
+    }
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      setStatus(upscaleStatus, "AI upscale cancelled.");
+    } else {
+      setStatus(
+        upscaleStatus,
+        error instanceof Error ? error.message : "Upscale failed.",
+        true,
+      );
+    }
+  } finally {
+    upscaleAbortController = null;
+    cancelUpscaleButton.hidden = true;
+    upscaleButton.disabled = false;
+  }
+});
+
+refreshUpscaleMode();
 
 const dataInput = $("#dataInput");
 const dataOutput = $("#dataOutput");
