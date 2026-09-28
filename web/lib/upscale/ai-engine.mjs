@@ -11,7 +11,6 @@ async function getOrt() {
     ortPromise = import("onnxruntime-web/all").then((ort) => {
       const base = new URL("./ort/", document.baseURI).href;
       ort.env.wasm.wasmPaths = base;
-      ort.env.wasm.proxy = false;
       ort.env.wasm.numThreads = globalThis.crossOriginIsolated
         ? Math.max(1, Math.min(4, Number(navigator.hardwareConcurrency) || 1))
         : 1;
@@ -65,7 +64,10 @@ export async function createAiSession({
 
   for (const backend of candidates) {
     try {
-      onStatus?.(`Starting ${backend === "webgpu" ? "WebGPU" : "WebAssembly"} AI engine…`);
+      // ONNX Runtime recommends proxying heavy WASM work to a Web Worker to
+      // keep the UI responsive. The proxy mode cannot be combined with WebGPU.
+      ort.env.wasm.proxy = backend === "wasm";
+      onStatus?.(`Starting ${backend === "webgpu" ? "WebGPU" : "WebAssembly worker"} AI engine…`);
       const session = await ort.InferenceSession.create(verified.buffer, {
         executionProviders: [backend],
         graphOptimizationLevel: "all",
