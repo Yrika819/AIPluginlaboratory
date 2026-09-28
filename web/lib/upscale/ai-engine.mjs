@@ -47,6 +47,15 @@ export async function fetchVerifiedModel(model = GENERAL_X4V3, {
   return { buffer, digest, url };
 }
 
+
+export async function clearAiCache() {
+  if (!("caches" in globalThis)) return { deletedCaches: 0 };
+  const names = await caches.keys();
+  const aiNames = names.filter((name) => name.startsWith("pocketbench-ai-"));
+  await Promise.all(aiNames.map((name) => caches.delete(name)));
+  return { deletedCaches: aiNames.length };
+}
+
 export async function createAiSession({
   model = GENERAL_X4V3,
   preferredBackend,
