@@ -496,3 +496,51 @@ input[type="range"] { width: calc(100% - 50px); vertical-align: middle; accent-c
 @media (max-width: 440px) {
   .upscale-options { grid-template-columns: 1fr; }
 }
+
+.ai-info-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+.upscale-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+  margin-top: .8rem;
+}
+.upscale-comparison figure {
+  min-width: 0;
+  margin: 0;
+  display: grid;
+  gap: .45rem;
+  padding: .65rem;
+  border-radius: 14px;
+  background: var(--surface-soft);
+}
+.upscale-comparison figcaption {
+  color: var(--accent);
+  font-size: .75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.upscale-comparison img {
+  width: 100%;
+  max-height: 460px;
+  object-fit: contain;
+  border-radius: 10px;
+  background:
+    linear-gradient(45deg, color-mix(in srgb, var(--border) 45%, transparent) 25%, transparent 25%) 0 0/16px 16px,
+    linear-gradient(-45deg, color-mix(in srgb, var(--border) 45%, transparent) 25%, transparent 25%) 0 8px/16px 16px,
+    linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--border) 45%, transparent) 75%) 8px -8px/16px 16px,
+    linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--border) 45%, transparent) 75%) -8px 0/16px 16px;
+}
+.upscale-comparison span {
+  color: var(--muted);
+  font-size: .72rem;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 620px) {
+  .upscale-comparison { grid-template-columns: 1fr; }
+}
