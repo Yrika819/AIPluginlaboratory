@@ -31,10 +31,14 @@ test("AI x2 performs real local ONNX inference and exposes a download", async ({
   await expect(page.locator("#upscaleProgress")).toHaveJSProperty("value", 1);
 });
 
-test("AI model and ONNX runtime are served from the same origin", async ({ page }) => {
+test("AI model and ONNX runtime are same-origin and removable from cache", async ({ page }) => {
   const requests = [];
   page.on("request", (request) => requests.push(request.url()));
   await page.goto("/#images");
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await page.reload();
 
   const svg = Buffer.from(
     '<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect width="4" height="4" fill="#222"/></svg>',
@@ -56,4 +60,12 @@ test("AI model and ONNX runtime are served from the same origin", async ({ page 
   });
   expect(nonLocal).toEqual([]);
   expect(requests.some((value) => value.includes("/models/realesr-general-x4v3.onnx"))).toBe(true);
+
+  const before = await page.evaluate(async () => (await caches.keys()).filter((name) => name.startsWith("pocketbench-ai-")));
+  expect(before).toContain("pocketbench-ai-v1");
+
+  await page.getByRole("button", { name: "Clear AI cache" }).click();
+  await expect(page.locator("#aiCacheStatus")).toContainText("AI cache cleared");
+  const after = await page.evaluate(async () => (await caches.keys()).filter((name) => name.startsWith("pocketbench-ai-")));
+  expect(after).toEqual([]);
 });
